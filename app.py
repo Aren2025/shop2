@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 from functools import wraps
 
-# Cargar variables de entorno (para desarrollo local)
+# Cargar variables de entorno
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,9 +16,6 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 app = Flask(__name__)
 app.secret_key = "una_clave_super_secreta_y_unica"
-
-# ----------------- Stripe test key -----------------
-# ⚠️ Ya no se usa aquí — se carga desde variable de entorno
 
 # ----------------- Tipo de cambio -----------------
 TIPO_CAMBIO = {
@@ -54,7 +51,13 @@ PRODUCTOS = {
 
 # ----------------- Base de datos -----------------
 def get_db():
-    conn = sqlite3.connect("usuarios.db")
+    # En Render, usa el disco persistente montado en /data
+    if os.path.exists("/data"):
+        db_path = "/data/usuarios.db"
+    else:
+        # En local, usa la carpeta actual
+        db_path = "usuarios.db"
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -479,4 +482,5 @@ def admin_precios():
 
 # ----------------- Iniciar app -----------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
