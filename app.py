@@ -297,16 +297,23 @@ def webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
 
+    # Log inicial para debugging
+    print("📩 Webhook recibido")
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, STRIPE_WEBHOOK_SECRET
         )
-    except ValueError:
-        print("⚠️ Webhook error: Invalid payload")
+        print(f"✅ Evento verificado: {event['type']}")
+    except ValueError as e:
+        print(f"⚠️ Error: Invalid payload - {str(e)}")
         return "Invalid payload", 400
-    except stripe.error.SignatureVerificationError:
-        print("⚠️ Webhook error: Invalid signature")
+    except stripe.error.SignatureVerificationError as e:
+        print(f"⚠️ Error: Invalid signature - {str(e)}")
         return "Invalid signature", 400
+    except Exception as e:
+        print(f"🔥 Error inesperado al verificar evento: {str(e)}")
+        return "Verification failed", 400
 
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
@@ -330,11 +337,22 @@ def webhook():
             return "Invalid package", 400
 
         try:
+            # Intentar hasta 3 veces si hay bloqueo de DB
             db = get_db()
-            db.execute("UPDATE users SET saldo = saldo + ?, moneda = ? WHERE id = ?",
-                      (coins, moneda, int(user_id)))
-            db.commit()
-            print(f"✅ Webhook: Acreditado {coins} coins al usuario {user_id}")
+            for i in range(3):
+                try:
+                    db.execute("UPDATE users SET saldo = saldo + ?, moneda = ? WHERE id = ?",
+                              (coins, moneda, int(user_id)))
+                    db.commit()
+                    print(f"✅ Webhook: Acreditado {coins} coins al usuario {user_id}")
+                    return "OK", 200
+                except sqlite3.OperationalError as e:
+                    if "database is locked" in str(e) and i < 2:
+                        print(f"🔒 DB bloqueada, reintento {i+1}/3...")
+                        time.sleep(1)
+                        continue
+                    else:
+                        raise e
         except Exception as e:
             print(f"❌ Webhook DB error: {e}")
             return "DB Error", 500
@@ -482,4 +500,5 @@ def admin_precios():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
