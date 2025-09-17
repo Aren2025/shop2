@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Admin - Precios (MXN)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Panel de Administración - Modificar Precios (MXN)</h1>
+    <a href="{{ url_for('index') }}">Volver al inicio</a>
+    <form method="POST">
+        <table border="1" cellpadding="5" cellspacing="0">
+            <tr>
+                <th>Producto</th>
+                <th>Precio actual (MXN)</th>
+                <th>Nuevo precio (MXN)</th>
+            </tr>
+            {% for producto, precio in productos.items() %}
+            <tr>
+                <td>{{ producto }}</td>
+                <td>{{ precio }}</td>
+                <td><input type="text" name="{{ producto }}" placeholder="{{ precio }}"></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="submit">Actualizar precios</button>
+    </form>
+</body>
+</html>

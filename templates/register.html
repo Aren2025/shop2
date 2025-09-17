@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <div class="header-container">
+        <h1 class="logo">Mi Tienda</h1>
+        <div class="header-right">
+            {% if session.get('username') %}
+            <span class="user">{{ session['username'] }}</span>
+            <span class="saldo">{{ saldo }} {{ moneda }}</span>
+            <a href="{{ url_for('logout') }}" class="btn">Cerrar sesión</a>
+            {% else %}
+            <a href="{{ url_for('index') }}" class="btn">← Volver al inicio</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-container">
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <h2>Crear Cuenta</h2>
+
+    <form class="form-usuario" method="POST" action="{{ url_for('register') }}">
+        <input type="text" name="username" placeholder="Nombre de usuario" required>
+        <input type="email" name="email" placeholder="Correo electrónico" required>
+        <input type="tel" name="telefono" placeholder="Teléfono" required>
+        <input type="text" name="pais" placeholder="País" required>
+        <input type="password" name="password" placeholder="Contraseña" required>
+        <input type="password" name="confirm_password" placeholder="Repite la contraseña" required>
+        <button type="submit">Registrarse</button>
+        <p class="ayuda">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></p>
+    </form>
+</div>
+</body>
+</html>

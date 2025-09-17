@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <div class="header-container">
+        <h1 class="logo">Mi Tienda</h1>
+        <div class="header-right">
+            {% if session.get('username') %}
+            <span class="user">{{ session['username'] }}</span>
+            <span class="saldo">{{ saldo }} {{ moneda }}</span>
+            <a href="{{ url_for('logout') }}" class="btn">Cerrar sesión</a>
+            {% else %}
+            <a href="{{ url_for('index') }}" class="btn">← Volver al inicio</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-container">
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <h2>Iniciar Sesión</h2>
+
+    <form class="form-usuario" method="POST" action="{{ url_for('login') }}">
+        <input type="email" name="email" placeholder="Correo electrónico" required>
+        <input type="password" name="password" placeholder="Contraseña" required>
+        <button type="submit">Iniciar sesión</button>
+        <p class="ayuda">¿No tienes cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a></p>
+    </form>
+</div>
+</body>
+</html>

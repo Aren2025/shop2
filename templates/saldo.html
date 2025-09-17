@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Saldo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <div class="header-container">
+        <h1 class="logo">Mi Tienda</h1>
+        <div class="header-right">
+            <!-- Botón Volver al inicio siempre visible -->
+            <a href="{{ url_for('index') }}" class="btn">← Inicio</a>
+
+            {% if session.get('username') %}
+            <span class="user">{{ session['username'] }}</span>
+            <span class="saldo">
+                Saldo actual: 
+                <span id="saldo-actual">{{ saldo }}</span> 
+                {{ moneda }}
+            </span>
+            <a href="{{ url_for('logout') }}" class="btn">Cerrar sesión</a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn">Iniciar sesión</a>
+            <a href="{{ url_for('register') }}" class="btn">Registrarse</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-container">
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <h2>Recargar Saldo</h2>
+
+    <div class="productos-grid">
+        {% for nombre, paquete in paquetes.items() %}
+        <div class="card">
+            <h3>{{ nombre }}</h3>
+            <p>{{ paquete.coins }} coins</p>
+            <p>Precio: {{ paquete.precio_local }} {{ moneda }}</p>
+            <form action="{{ url_for('recargar_tarjeta') }}" method="POST">
+                <input type="hidden" name="paquete" value="{{ nombre }}">
+                <input type="hidden" name="moneda" value="{{ moneda }}">
+                <button type="submit">Recargar</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mensaje de espera tras recarga exitosa -->
+    {% if from_success %}
+    <p id="mensaje-espera" style="color: orange; font-weight: bold; margin-top: 20px;">
+    <span class="loader"></span> Actualizando saldo... (por favor espera)
+    </p>
+    {% endif %}
+
+</div>
+
+<!-- SCRIPT PARA ACTUALIZAR SALDO AUTOMÁTICAMENTE -->
+{% if from_success %}
+<script>
+    let intentos = 0;
+    const maxIntentos = 10; // Intenta hasta 20 segundos
+    const intervalo = setInterval(async () => {
+        if (intentos >= maxIntentos) {
+            clearInterval(intervalo);
+            document.getElementById('mensaje-espera').innerText = "⚠️ No se pudo actualizar saldo automáticamente. Por favor, recarga la página.";
+            document.getElementById('mensaje-espera').style.color = "red";
+            return;
+        }
+        intentos++;
+
+        try {
+            const response = await fetch("{{ url_for('get_saldo_actual') }}");
+            if (!response.ok) {
+                throw new Error('Error en respuesta');
+            }
+            const data = await response.json();
+            if (data.saldo !== undefined) {
+                document.getElementById('saldo-actual').innerText = data.saldo.toFixed(2);
+                document.getElementById('mensaje-espera').style.display = 'none';
+                clearInterval(intervalo);
+                console.log("✅ Saldo actualizado automáticamente");
+            }
+        } catch(e) {
+            console.log("Intentando de nuevo... (" + intentos + "/" + maxIntentos + ")");
+        }
+    }, 2000); // Intenta cada 2 segundos
+</script>
+{% endif %}
+
+</body>
+</html>

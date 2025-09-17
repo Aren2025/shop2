@@ -1,0 +1,483 @@
+/* General */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #eef2f5;
+    margin: 0;
+    padding: 0;
+}
+
+/* Encabezado */
+header {
+    background-color: #2C3E50;
+    color: white;
+    padding: 15px 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-right .saldo {
+    font-weight: bold;
+    background-color: #1ABC9C;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+.header-right .user {
+    font-style: italic;
+}
+
+.header-right .btn {
+    background-color: #ffffff33;
+    color: white;
+    padding: 6px 12px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.header-right .btn:hover {
+    background-color: #ffffff55;
+}
+
+/* Contenedor general */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Título de sección */
+h2 {
+    text-align: center;
+    color: #34495E;
+    margin-bottom: 30px;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+/* Grid de productos */
+.productos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 25px;
+}
+
+/* Tarjeta de producto */
+.card {
+    background: linear-gradient(135deg, #ffffff, #f7f9fc);
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.card h3 {
+    margin-top: 0;
+    color: #2C3E50;
+    font-size: 22px;
+}
+
+.card p {
+    font-size: 18px;
+    color: #7F8C8D;
+}
+
+.card button {
+    margin-top: 15px;
+    width: 100%;
+    padding: 12px;
+    background-color: #1ABC9C;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.card button:hover {
+    background-color: #16A085;
+}
+
+/* Flash messages */
+.flash-container {
+    margin-bottom: 20px;
+}
+
+.flash {
+    padding: 12px;
+    margin: 5px 0;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.flash.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.flash.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Formulario recarga */
+.form-saldo {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input[type="number"], select {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+button[type="submit"] {
+    background-color: #1ABC9C;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button[type="submit"]:hover {
+    background-color: #16A085;
+}
+
+/* Tarjeta recarga */
+.card-saldo {
+    background: linear-gradient(135deg, #ffffff, #f0f4f8);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    max-width: 400px;
+    margin: 0 auto 30px auto;
+}
+
+
+/* Formularios de login y registro */
+.form-usuario {
+    max-width: 400px;
+    margin: 40px auto;
+    background: linear-gradient(135deg, #ffffff, #f7f9fc);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Inputs para login/registro */
+.form-usuario input[type="text"],
+.form-usuario input[type="email"],
+.form-usuario input[type="password"],
+.form-usuario input[type="tel"] {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    outline: none;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+/* Efecto focus */
+.form-usuario input:focus {
+    border-color: #1ABC9C;
+    box-shadow: 0 0 8px rgba(26,188,156,0.3);
+}
+
+/* Botones de login/registro */
+.form-usuario button {
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #1ABC9C, #16A085);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.form-usuario button:hover {
+    background: linear-gradient(135deg, #16A085, #149174);
+}
+
+/* Texto o links de ayuda */
+.form-usuario .ayuda {
+    text-align: center;
+    font-size: 14px;
+    color: #7F8C8D;
+}
+.form-usuario .ayuda a {
+    color: #1ABC9C;
+    text-decoration: none;
+}
+.form-usuario .ayuda a:hover {
+    text-decoration: underline;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  padding: 20px;
+}
+.modal[aria-hidden="false"] { display: flex; }
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: #e74c3c;
+  border: none;
+  font-size: 20px;   /* más grande y visible */
+  font-weight: bold;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.modal-close:hover {
+  background: #c0392b;
+}
+
+.modal-close:hover {
+  background: #c0392b;
+  transform: scale(1.1);
+}
+.modal-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+.card button.btn-buy {
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  background: linear-gradient(135deg, #1ABC9C, #16A085);
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+.card button.btn-buy:hover {
+  background: linear-gradient(135deg,#16A085,#149174);
+}
+
+/* Botón copiar */
+.btn-copy {
+  margin-left: 6px;
+  background: #1ABC9C;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  transition: 0.2s;
+}
+.btn-copy:hover {
+  background: #16A085;
+}
+#modalCerrar {
+    display: none;
+}
+/* Evitar que las tarjetas dentro del modal se muevan al pasar el ratón */
+.modal .card:hover {
+    transform: none;
+    box-shadow: none;
+}  
+/* ---------- ESTILOS ADMIN PANEL Y PRECIOS ---------- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f6fa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2 {
+    text-align: center;
+    color: #2c3e50;
+}
+
+h1 {
+    margin-top: 20px;
+    font-size: 2rem;
+}
+
+h2 {
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+a {
+    text-decoration: none;
+    color: #007bff;
+    margin: 10px;
+    display: inline-block;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #0056b3;
+}
+
+form {
+    background-color: #fff;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+input[type="text"], input[type="email"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0 15px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border 0.3s;
+}
+
+input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Tablas */
+table {
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+}
+
+th {
+    background-color: #007bff;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+tr:nth-child(even) {
+    background-color: #f4f4f4;
+}
+
+tr:hover {
+    background-color: #e6f0ff;
+    transition: 0.3s;
+}
+
+/* Formularios en admin_panel */
+form input {
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* Responsivo */
+@media screen and (max-width: 768px) {
+    table, th, td {
+        font-size: 0.9rem;
+    }
+    form {
+        width: 95%;
+    }
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+}

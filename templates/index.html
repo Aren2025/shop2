@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tienda de Cuentas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <div class="header-container">
+    <h1 class="logo">💻 Tienda de Cuentas</h1>
+    <div class="header-right">
+      {% if username %}
+        <span class="saldo">Saldo: <strong>{{ saldo }} {{ moneda }}</strong></span>
+        <span class="user">Hola, {{ username }}</span>
+        <a href="{{ url_for('saldo') }}" class="btn">Recargar</a>
+        <a href="{{ url_for('logout') }}" class="btn">Cerrar sesión</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn">Login</a>
+        <a href="{{ url_for('register') }}" class="btn">Registro</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if username %}
+    <h2>Productos disponibles</h2>
+    <div class="productos-grid">
+      {% for prod, precio in productos.items() %}
+        <div class="card">
+          <h3>{{ prod }}</h3>
+          <p>Precio: {{ precio }} MXN</p>
+          <p class="stock">Stock: {{ stock[prod] if stock and prod in stock else '0' }} disponible</p>
+          <button class="btn-buy" data-product="{{ prod }}">Comprar</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Bienvenido! Por favor inicia sesión para comprar cuentas.</p>
+  {% endif %}
+</div>
+
+<!-- Modal -->
+<div id="purchaseModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button id="modalCerrar" class="btn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('purchaseModal');
+  const modalBody = document.getElementById('modalBody');
+  const modalClose = document.getElementById('modalClose');
+  const modalCerrar = document.getElementById('modalCerrar');
+
+  function abrirModal(html) {
+    modalBody.innerHTML = html;
+    modal.setAttribute('aria-hidden', 'false');
+    modal.style.display = 'flex';
+  }
+  function cerrarModal() {
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.display = 'none';
+  }
+  modalClose.addEventListener('click', cerrarModal);
+  modalCerrar.addEventListener('click', cerrarModal);
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) cerrarModal();
+  });
+
+  document.querySelectorAll('.btn-buy').forEach(btn=>{
+    btn.addEventListener('click', async function(){
+      const producto = this.dataset.product;
+      const resp = await fetch(`/comprar/${encodeURIComponent(producto)}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        abrirModal(`<div class="card"><h3>Error</h3><p>${data.error}</p></div>`);
+        return;
+      }
+
+      const html = `
+        <div class="card">
+          <h3>${data.producto}</h3>
+          <p><strong>${data.renovable}</strong></p>
+          <p><strong>Correo:</strong> ${data.email} <button class="btn-copy" data-copy="${data.email}">📋</button></p>
+          <p><strong>Contraseña:</strong> ${data.password} <button class="btn-copy" data-copy="${data.password}">📋</button></p>
+          <p><strong>Perfil:</strong> ${data.perfil}</p>
+          <p><strong>Pin:</strong> ${data.pin}</p>
+          <p><strong>Instrucciones:</strong> ${data.instrucciones}</p>
+          <p><strong>Dispositivos:</strong> ${data.dispositivo_limit}</p>
+          <p><strong>Fecha de compra:</strong> ${data.fecha_compra}</p>
+          <hr>
+          <p><small>Precio: ${data.precio} ${data.moneda} — Saldo restante: ${data.saldo} ${data.moneda}</small></p>
+        </div>`;
+      abrirModal(html);
+
+      // actualizar saldo
+      document.querySelector('.saldo strong').innerText = `${data.saldo} ${data.moneda}`;
+
+      // actualizar stock
+      const card = btn.closest('.card');
+      const stockP = card.querySelector('.stock');
+      if (stockP) {
+        let stockActual = parseInt(stockP.innerText.replace(/\D/g,''));
+        stockP.innerText = `Stock: ${stockActual-1} disponible`;
+      }
+
+      // activar botones de copiar
+      setTimeout(() => {
+        document.querySelectorAll('.btn-copy').forEach(btn=>{
+          btn.addEventListener('click', () => {
+            navigator.clipboard.writeText(btn.dataset.copy).then(()=>{
+              btn.innerText = "✅";
+              setTimeout(()=>btn.innerText = "📋", 1200);
+            });
+          });
+        });
+      }, 100);
+    });
+  });
+});
+</script>
+</body>
+</html>

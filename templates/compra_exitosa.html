@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Compra exitosa</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header> ... (igual que en otras plantillas) ... </header>
+
+<div class="container">
+  <div class="card">
+    <h2>Compra exitosa: {{ producto }}</h2>
+    <p><strong>Usuario:</strong> {{ acc_email }}</p>
+    <p><strong>Contraseña:</strong> {{ acc_password }}</p>
+    <p><strong>Precio:</strong> {{ precio }} {{ moneda }}</p>
+    <p><strong>Saldo restante:</strong> {{ saldo }} {{ moneda }}</p>
+
+    <p>Los detalles quedaron guardados en tu historial. ¡Gracias por tu compra!</p>
+
+    <a href="{{ url_for('saldo') }}" class="btn">Volver a saldo</a>
+    <a href="{{ url_for('index') }}" class="btn">Ir al inicio</a>
+  </div>
+</div>
+</body>
+</html>

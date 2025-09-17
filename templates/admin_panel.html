@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>👑 Panel de Administrador</h1>
+<p><a href="{{ url_for('index') }}">Volver a la tienda</a></p>
+
+<h2>Agregar cuenta nueva</h2>
+<form method="POST" action="{{ url_for('admin_agregar_cuenta') }}">
+    <input type="text" name="producto" placeholder="Producto" required>
+    <input type="email" name="email" placeholder="Correo" required>
+    <input type="text" name="password" placeholder="Contraseña" required>
+    <input type="text" name="perfil" placeholder="Perfil">
+    <input type="text" name="pin" placeholder="Pin">
+    <input type="text" name="instrucciones" placeholder="Instrucciones">
+    <input type="text" name="renovable" placeholder="Renovable">
+    <input type="text" name="dispositivo_limit" placeholder="Dispositivos">
+    <button type="submit">Agregar cuenta</button>
+</form>
+
+<h2>Cuentas existentes</h2>
+<table border="1">
+<tr>
+    <th>ID</th><th>Producto</th><th>Email</th><th>Contraseña</th><th>Estado</th>
+</tr>
+{% for cuenta in cuentas %}
+<tr>
+    <td>{{ cuenta.id }}</td>
+    <td>{{ cuenta.producto }}</td>
+    <td>{{ cuenta.email }}</td>
+    <td>{{ cuenta.password }}</td>
+    <td>{{ cuenta.estado }}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>

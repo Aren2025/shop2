@@ -1,0 +1,4 @@
+producto,email,password,perfil,pin,instrucciones,renovable,dispositivo_limit
+Vix Perfil,vixpelusa20@mtzz.xyz,premium2025,P1,No tiene,"No modificar datos",No Renovable,"Solo 1 dispositivo"
+Netflix Completa,netflixuser1@mail.com,clave123,P0,No tiene,"Cambiar contraseña después de 7 días",Renovable,"2 dispositivos"
+Spotify Perfil,spotify01@mail.com,clave456,P1,No tiene,"No modificar correo",No Renovable,"1 dispositivo"
