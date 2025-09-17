@@ -51,13 +51,11 @@ PRODUCTOS = {
 
 # ----------------- Base de datos -----------------
 def get_db():
-    # En Render, usa el disco persistente montado en /data
     if os.path.exists("/data"):
         db_path = "/data/usuarios.db"
     else:
-        # En local, usa la carpeta actual
         db_path = "usuarios.db"
-    conn = sqlite3.connect(db_path, check_same_thread=False)
+    conn = sqlite3.connect(db_path, check_same_thread=False)  # ← ¡ESTO ES CLAVE!
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -484,3 +482,4 @@ def admin_precios():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
