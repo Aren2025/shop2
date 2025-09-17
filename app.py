@@ -6,17 +6,18 @@ from datetime import datetime
 import os
 from functools import wraps
 import time
+from dotenv import load_dotenv
+import os
 
 # Cargar variables de entorno
-from dotenv import load_dotenv
 load_dotenv()
 
-# Configurar Stripe
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback-inseguro-solo-para-desarrollo")
+app.secret_key = os.getenv("SECRET_KEY")  # ¡Seguro!
+
+# Configurar Stripe con variables de entorno
+stripe.api_key = os.getenv("STRIPE_API_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # ----------------- Tipo de cambio -----------------
 TIPO_CAMBIO = {
@@ -382,23 +383,31 @@ def webhook():
 # ----------------- Compra con asignación de cuentas -----------------
 @app.route("/comprar/<producto>", methods=["POST"])
 def comprar(producto):
+    print(f"🛒 INICIANDO COMPRA: {producto}")
+    
     if "user_id" not in session:
+        print("❌ Usuario no logueado")
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({"error": "Debes iniciar sesión primero."}), 401
         return redirect(url_for("login"))
 
     if producto not in PRODUCTOS:
+        print(f"❌ Producto inválido: {producto}")
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({"error": "Producto inválido."}), 400
         return redirect(url_for("index"))
 
     db = get_db()
     user = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone()
+    print(f"👤 Usuario encontrado: {user['username'] if user else 'None'}")
+    print(f"💰 Saldo actual: {user['saldo'] if user else 'None'}")
 
     if not user:
+        print("❌ Usuario no encontrado en BD")
         session.clear()
         return jsonify({"error": "Sesión inválida. Por favor, inicia sesión de nuevo."}), 401
 
+    # Verificar saldo suficiente
     precio_usd = PRODUCTOS[producto]
     moneda = user["moneda"]
 
@@ -407,23 +416,54 @@ def comprar(producto):
     else:
         precio_local = round(precio_usd / TIPO_CAMBIO["MXN"] * TIPO_CAMBIO.get(moneda, 1), 2)
 
+    print(f"💵 Precio calculado: {precio_local} {moneda}")
+
+    if user["saldo"] < precio_local:
+        print("❌ Saldo insuficiente")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({"error": "Saldo insuficiente"}), 400
+        flash("Saldo insuficiente", "error")
+        return redirect(url_for("index"))
+
     cuenta = db.execute(
         "SELECT * FROM cuentas WHERE producto=? AND estado='disponible' LIMIT 1",
         (producto,)
     ).fetchone()
+    
     if not cuenta:
+        print(f"❌ No hay cuentas disponibles para {producto}")
         msg = f"No hay cuentas disponibles para {producto}"
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({"error": msg}), 404
         return redirect(url_for("index"))
 
-    # Marcar como vendida y descontar saldo
-    db.execute("UPDATE cuentas SET estado='vendida', vendido_a=? WHERE id=?", (session["user_id"], cuenta["id"]))
-    nuevo_saldo = user["saldo"] - precio_local
-    db.execute("UPDATE users SET saldo=? WHERE id=?", (nuevo_saldo, session["user_id"]))
-    db.commit()
+    print(f"📦 Cuenta encontrada: {cuenta['email']}")
 
-    # Datos adicionales
+    # Marcar como vendida y descontar saldo
+    try:
+        print("🔄 Actualizando cuenta...")
+        db.execute("UPDATE cuentas SET estado='vendida', vendido_a=? WHERE id=?", (session["user_id"], cuenta["id"]))
+        
+        nuevo_saldo = user["saldo"] - precio_local
+        print(f"💰 Nuevo saldo calculado: {nuevo_saldo}")
+        
+        print("🔄 Actualizando saldo usuario...")
+        db.execute("UPDATE users SET saldo=? WHERE id=?", (nuevo_saldo, session["user_id"]))
+        
+        print("💾 Haciendo commit...")
+        db.commit()
+        print("✅ Commit exitoso!")
+        
+        # Verificar que se actualizó
+        user_actualizado = db.execute("SELECT saldo FROM users WHERE id=?", (session["user_id"],)).fetchone()
+        print(f"🔍 Saldo verificado en BD: {user_actualizado['saldo'] if user_actualizado else 'None'}")
+        
+    except Exception as e:
+        print(f"🔥 ERROR EN BASE DE DATOS: {str(e)}")
+        db.rollback()
+        return jsonify({"error": f"Error en la base de datos: {str(e)}"}), 500
+
+     # Datos adicionales
     perfil = cuenta["perfil"]
     pin = cuenta["pin"]
     instrucciones = cuenta["instrucciones"]
