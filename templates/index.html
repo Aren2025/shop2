@@ -113,19 +113,15 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>`;
       abrirModal(html);
 
-      // actualizar saldo en el header
-      const saldoEl = document.querySelector('.saldo strong');
-      if (saldoEl) {
-        saldoEl.textContent = `${data.saldo.toFixed(2)} ${data.moneda}`;
-      }
+      // actualizar saldo
+      document.querySelector('.saldo strong').innerText = `${data.saldo} ${data.moneda}`;
 
-      // actualizar stock del producto comprado
+      // actualizar stock
       const card = btn.closest('.card');
       const stockP = card.querySelector('.stock');
       if (stockP) {
-        let stockActual = parseInt(stockP.innerText.replace(/\D/g,'')) || 0;
-        stockActual = Math.max(stockActual - 1, 0);
-        stockP.innerText = `Stock: ${stockActual} disponible`;
+        let stockActual = parseInt(stockP.innerText.replace(/\D/g,''));
+        stockP.innerText = `Stock: ${stockActual-1} disponible`;
       }
 
       // activar botones de copiar
