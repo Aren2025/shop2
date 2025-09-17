@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 from functools import wraps
 import time
+
 # Cargar variables de entorno
 from dotenv import load_dotenv
 load_dotenv()
@@ -15,7 +16,7 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 app = Flask(__name__)
-app.secret_key = "una_clave_super_secreta_y_unica"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback-inseguro-solo-para-desarrollo")
 
 # ----------------- Tipo de cambio -----------------
 TIPO_CAMBIO = {
@@ -55,7 +56,7 @@ def get_db():
         db_path = "/data/usuarios.db"
     else:
         db_path = "usuarios.db"
-    conn = sqlite3.connect(db_path, check_same_thread=False)  # ← ¡ESTO ES CLAVE!
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -70,7 +71,8 @@ with get_db() as db:
         telefono TEXT,
         pais TEXT,
         saldo REAL DEFAULT 0,
-        moneda TEXT DEFAULT 'MXN'
+        moneda TEXT DEFAULT 'MXN',
+        is_admin INTEGER DEFAULT 0
     )
     """)
     db.execute("""
@@ -112,8 +114,11 @@ def index():
     if "user_id" in session:
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone()
+        if not user:
+            session.clear()
+            flash("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.", "error")
+            return redirect(url_for("login"))
 
-        # calcular stock disponible por producto
         stock = {}
         for prod in PRODUCTOS.keys():
             stock[prod] = db.execute(
@@ -128,7 +133,6 @@ def index():
                                productos=PRODUCTOS,
                                stock=stock)
     return render_template("index.html", username=None, productos={})
-
 
 @app.route("/register", methods=["GET","POST"])
 def register():
@@ -200,6 +204,13 @@ def saldo():
 
     db = get_db()
     user = db.execute("SELECT * FROM users WHERE id=?",(session["user_id"],)).fetchone()
+
+    # ¡VERIFICACIÓN CLAVE! Si el usuario no existe, cierra sesión
+    if not user:
+        session.clear()
+        flash("Tu cuenta no existe o fue eliminada. Por favor, inicia sesión de nuevo.", "error")
+        return redirect(url_for("login"))
+
     moneda = user["moneda"]
 
     PAQUETES = {
@@ -235,6 +246,11 @@ def recargar_tarjeta():
     moneda = request.form["moneda"]
     db = get_db()
     user = db.execute("SELECT * FROM users WHERE id=?",(session["user_id"],)).fetchone()
+
+    if not user:
+        session.clear()
+        flash("Tu sesión no es válida. Por favor, inicia sesión de nuevo.", "error")
+        return redirect(url_for("login"))
 
     PAQUETES = {
         "Pequeño": {"coins": 90, "precio_usd": 5},
@@ -294,36 +310,36 @@ def get_saldo_actual():
 # ----------------- Webhook de Stripe -----------------
 @app.route("/webhook", methods=["POST"])
 def webhook():
+    print("📩 [WEBHOOK] Solicitud recibida")
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
-
-    # Log inicial para debugging
-    print("📩 Webhook recibido")
 
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, STRIPE_WEBHOOK_SECRET
         )
-        print(f"✅ Evento verificado: {event['type']}")
+        print(f"✅ [WEBHOOK] Evento verificado: {event['type']}")
     except ValueError as e:
-        print(f"⚠️ Error: Invalid payload - {str(e)}")
+        print(f"❌ [WEBHOOK] Error: Payload inválido - {str(e)}")
         return "Invalid payload", 400
     except stripe.error.SignatureVerificationError as e:
-        print(f"⚠️ Error: Invalid signature - {str(e)}")
+        print(f"❌ [WEBHOOK] Error: Firma inválida - {str(e)}")
         return "Invalid signature", 400
     except Exception as e:
-        print(f"🔥 Error inesperado al verificar evento: {str(e)}")
+        print(f"🔥 [WEBHOOK] Error inesperado: {str(e)}")
         return "Verification failed", 400
 
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
         user_id = session.get('client_reference_id')
+        print(f"🔍 [WEBHOOK] user_id recibido: {user_id}")
 
         if not user_id:
-            print("⚠️ Webhook: No user_id in session")
+            print("❌ [WEBHOOK] No se recibió user_id")
             return "No user ID", 400
 
         paquete = session['metadata'].get('paquete')
+        print(f"📦 [WEBHOOK] Paquete: {paquete}")
         PAQUETES_COINS = {
             "Pequeño": 90,
             "Mediano": 200,
@@ -333,30 +349,34 @@ def webhook():
         moneda = session['metadata'].get('moneda', 'MXN')
 
         if coins <= 0:
-            print(f"⚠️ Webhook: Invalid package '{paquete}'")
+            print(f"❌ [WEBHOOK] Paquete inválido: {paquete}")
             return "Invalid package", 400
 
         try:
-            # Intentar hasta 3 veces si hay bloqueo de DB
+            print(f"💾 [WEBHOOK] Intentando actualizar saldo para user_id: {user_id}")
             db = get_db()
-            for i in range(3):
+            for i in range(3):  # Reintentar hasta 3 veces
                 try:
                     db.execute("UPDATE users SET saldo = saldo + ?, moneda = ? WHERE id = ?",
                               (coins, moneda, int(user_id)))
                     db.commit()
-                    print(f"✅ Webhook: Acreditado {coins} coins al usuario {user_id}")
+                    print(f"✅ [WEBHOOK] ¡ÉXITO! Acreditado {coins} coins al usuario {user_id}")
                     return "OK", 200
                 except sqlite3.OperationalError as e:
                     if "database is locked" in str(e) and i < 2:
-                        print(f"🔒 DB bloqueada, reintento {i+1}/3...")
+                        print(f"🔒 [WEBHOOK] DB bloqueada, esperando 1s... intento {i+2}/3")
                         time.sleep(1)
                         continue
                     else:
                         raise e
+                except Exception as db_error:
+                    print(f"❌ [WEBHOOK] Error de base de datos: {str(db_error)}")
+                    raise db_error
         except Exception as e:
-            print(f"❌ Webhook DB error: {e}")
+            print(f"🔥 [WEBHOOK] ERROR CRÍTICO: {str(e)}")
             return "DB Error", 500
 
+    print("ℹ️ [WEBHOOK] Evento no manejado, pero OK")
     return "OK", 200
 
 # ----------------- Compra con asignación de cuentas -----------------
@@ -374,6 +394,10 @@ def comprar(producto):
 
     db = get_db()
     user = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone()
+
+    if not user:
+        session.clear()
+        return jsonify({"error": "Sesión inválida. Por favor, inicia sesión de nuevo."}), 401
 
     precio_usd = PRODUCTOS[producto]
     moneda = user["moneda"]
@@ -438,6 +462,12 @@ def perfil():
 
     db = get_db()
     user = db.execute("SELECT * FROM users WHERE id=?",(session["user_id"],)).fetchone()
+
+    if not user:
+        session.clear()
+        flash("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.", "error")
+        return redirect(url_for("login"))
+
     cuentas = db.execute("SELECT * FROM cuentas WHERE vendido_a=?",(session["user_id"],)).fetchall()
     return render_template("perfil.html", user=user, cuentas=cuentas)
 
@@ -498,9 +528,5 @@ def admin_precios():
 
 # ----------------- Iniciar app -----------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 10000))  # ← Render requiere 10000 por defecto
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
-
-
